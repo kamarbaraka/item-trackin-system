@@ -12,12 +12,11 @@ from src.gui.RegistrationWindow import Registration
 
 class Login(QDialog):
 
-    def __init__(self, database=None):
+    def __init__(self):
         super().__init__()
         self.__init()
-        if database is None:
-            self.database = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
-        self.database = database
+
+        self.database = DatabaseApi('../resources/database/database', '../resources/images/barcodeImages')
 
     def __init(self):
         self.setModal(True)
@@ -32,7 +31,7 @@ class Login(QDialog):
         login_label.setAlignment(Qt.AlignmentFlag.AlignTop)
         login_label.move(185, 10)
 
-        self.login_icon = '../../resources/images/user_icon.png'
+        self.login_icon = '../resources/images/user_icon.png'
 
         login_icon_label = QLabel(self)
         pixmap = QPixmap(self.login_icon)

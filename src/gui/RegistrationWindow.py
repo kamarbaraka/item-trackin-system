@@ -12,12 +12,11 @@ from src.databaseApi.DatabaseApi import DatabaseApi
 
 class Registration(QDialog):
 
-    def __init__(self, database=None):
+    def __init__(self):
         super().__init__()
         self.__init()
-        if database is None:
-            self.database = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
-        self.database = database
+
+        self.database = DatabaseApi('../resources/database/database', '../resources/images/barcodeImages')
 
     def __init(self):
         self.setModal(True)
@@ -34,7 +33,7 @@ class Registration(QDialog):
         registration_label.setAlignment(Qt.AlignmentFlag.AlignTop)
         registration_label.move(100, 10)
 
-        image = '../../resources/images/user_icon.png'
+        image = '../resources/images/user_icon.png'
 
         registration_profile_pic = QLabel(self)
         pixmap = QPixmap(image)
