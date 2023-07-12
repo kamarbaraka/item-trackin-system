@@ -5,6 +5,7 @@ import random
 import datetime
 import pandas
 import barcode as bc
+from barcode.writer import ImageWriter
 
 
 '''author: kamar baraka'''
@@ -45,6 +46,7 @@ class DatabaseApi:
             print("database exists")
         if barcode_path is not None:
             self.barcode_image_storage = barcode_path
+        self.barcode_image_storage = barcode_path
 
     def parse_excel(self, excel_doc):
         database = self.database
@@ -115,6 +117,8 @@ class DatabaseApi:
 
     def fetch(self, barcode):
         database = self.database
+        if str(barcode) not in database:
+            return "no such data"
         database[str(barcode)]['count'] += 1
         for dic in database['report']:
             if dic['Barcode'] == str(barcode):
@@ -129,15 +133,15 @@ class DatabaseApi:
                         'total_reuse': database.get('total_reuse'), 'total_kgs_saved': database['total_kgs_saved']}
         return barcode_data
 
-    def generate(self, count, kgs=0.0, path=None):
+    def generate(self, count, kgs=0.0, path=None, image_format="png"):
         self.count = count
-        lis_of_codes = self.__generator(path)
+        lis_of_codes = self.__generator(path, image_format)
         for code in lis_of_codes:
             self.parse(code)
             self.set_kg(str(code), kgs)
         return 'ok'
 
-    def __generator(self, path):
+    def __generator(self, path, image_format):
         database = self.database
         if path is None:
             path = self.barcode_image_storage
@@ -152,7 +156,7 @@ class DatabaseApi:
         codes = []
         for counts in range(1, self.count+1):
             random_number = random.randint(100000000000, 999999999999)
-            bark = bc.EAN13(str(random_number))
+            bark = bc.EAN13(str(random_number), writer=ImageWriter(format=image_format))
             bark.save(f'{path}/qrcode{database["imagecount"]}')
             database['imagecount'] += 1
             codes.append(random_number)
@@ -204,11 +208,11 @@ class DatabaseApi:
 
 if __name__ == '__main__':
     db = DatabaseApi('../../resources/database/database')
-    db1 = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
-    print(db is db1)
-    print(db1.parse(123456))
-    print(db.fetch(123456))
-    print(db is db1)
+    # db1 = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
+    # print(db is db1)
+    # print(db1.parse(123456))
+    # print(db.fetch(123456))
+    # print(db is db1)
 
     # while True:
     #     inp = input('scan barcode to save, type "do" when done \n')
@@ -240,8 +244,8 @@ if __name__ == '__main__':
     # print(db.generate(4632, kgs=0.84))
     # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
     # print(db.generate(6, 0.72))
-    # print(db.generate(2, 0.58))
-    # print(db.generate(2, 0.86))
+    print(db.generate(2, 0.58, '../../resources/images/barcodeImages'))
+    print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
     # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
     # print(db.report('out_test.xlsx'))
