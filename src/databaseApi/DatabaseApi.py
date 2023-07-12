@@ -2,9 +2,9 @@ import os
 import shelve
 import sys
 import random
-import barcode as bc
 import datetime
 import pandas
+import barcode as bc
 
 
 '''author: kamar baraka'''
@@ -21,8 +21,16 @@ class DatabaseApi:
     count = 0
 
     '''constructor to initialize the class
-    :param database, barcode_image_storage'''
-    def __init__(self, database, barcode_image_storage):
+    :param database the database to reference
+    :param barcode_image_storage the path to the generated barcode images folder'''
+
+    '''singleton class'''
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "instance"):
+            cls.instance = super(DatabaseApi, cls).__new__(cls)
+        return cls.instance
+
+    def __init__(self, database, barcode_path=None):
         try:
             file = open(f'{database}.dat', 'x')
             self.__class_count = 0
@@ -35,8 +43,8 @@ class DatabaseApi:
             self.database = shelve.open(database, writeback=True)
         except FileExistsError:
             print("database exists")
-
-        self.barcode_image_storage = barcode_image_storage
+        if barcode_path is not None:
+            self.barcode_image_storage = barcode_path
 
     def parse_excel(self, excel_doc):
         database = self.database
@@ -80,6 +88,8 @@ class DatabaseApi:
             self.database['total_kgs_saved'] = self.__total_kgs
             return 'ok'
 
+        if 'report' not in self.database:
+            self.database['report'] = []
         if str(barcode) in self.database:
             return 'data exists'
         self.database[str(barcode)] = dict(barcode=barcode, count=0, name=self.__container_number,
@@ -119,27 +129,31 @@ class DatabaseApi:
                         'total_reuse': database.get('total_reuse'), 'total_kgs_saved': database['total_kgs_saved']}
         return barcode_data
 
-    def generate(self, count, kgs=0.0):
+    def generate(self, count, kgs=0.0, path=None):
         self.count = count
-        lis_of_codes = self.__generator()
+        lis_of_codes = self.__generator(path)
         for code in lis_of_codes:
             self.parse(code)
             self.set_kg(str(code), kgs)
         return 'ok'
 
-    def __generator(self):
+    def __generator(self, path):
         database = self.database
+        if path is None:
+            path = self.barcode_image_storage
         if self.__class_count == 0:
             database['imagecount'] = 0
             print(f'if {database["imagecount"]}')
         else:
+            if database.get('imagecount') is None:
+                database['imagecount'] = 0
             database['imagecount'] = self.database['imagecount']
             print(f'else {database["imagecount"]}')
         codes = []
         for counts in range(1, self.count+1):
             random_number = random.randint(100000000000, 999999999999)
             bark = bc.EAN13(str(random_number))
-            bark.save(f'{self.barcode_image_storage}/qrcode{database["imagecount"]}')
+            bark.save(f'{path}/qrcode{database["imagecount"]}')
             database['imagecount'] += 1
             codes.append(random_number)
         return codes
@@ -158,6 +172,15 @@ class DatabaseApi:
             return 'ok'
         if user_profile['username'] in database['users']:
             return 'user exists'
+        if 'users' not in database:
+            database['users'] = {
+                user_profile['username']: {
+                    'password': user_profile['password'],
+                    'firstname': user_profile['firstname'],
+                    'lastname': user_profile['lastname']
+                }
+            }
+
         database['users'].update(
             {
                 user_profile['username']: {
@@ -180,7 +203,12 @@ class DatabaseApi:
 
 
 if __name__ == '__main__':
-    db = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
+    db = DatabaseApi('../../resources/database/database')
+    db1 = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
+    print(db is db1)
+    print(db1.parse(123456))
+    print(db.fetch(123456))
+    print(db is db1)
 
     # while True:
     #     inp = input('scan barcode to save, type "do" when done \n')
@@ -210,9 +238,13 @@ if __name__ == '__main__':
     # print(db.generate(2300, kgs=0.62))
     # print(db.generate(625, kgs=0.21))
     # print(db.generate(4632, kgs=0.84))
-    # print(db.generate(82))
+    # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
+    # print(db.generate(6, 0.72))
+    # print(db.generate(2, 0.58))
+    # print(db.generate(2, 0.86))
+    # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
-    print(db.report('out_test.xlsx'))
+    # print(db.report('out_test.xlsx'))
 
     # print(db.register({'username': 'kamar', 'password': '1234', 'firstname': 'kamar', 'lastname': 'baraka'}))
     # print('done register')
