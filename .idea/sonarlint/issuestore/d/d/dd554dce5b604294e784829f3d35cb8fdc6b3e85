@@ -1,0 +1,10 @@
+
+ppython:S1192N"LDefine a constant instead of duplicating this literal 'Reuse Count' 5 times.(¼£ÃÕÿÿÿÿÿ8à±Ûñ“1
+wpython:S1192N"SDefine a constant instead of duplicating this literal 'Total Weight Saved' 5 times.(¼£ÃÕÿÿÿÿÿ8à±Ûñ“1
+opython:S1192N"KDefine a constant instead of duplicating this literal 'Weight(kg)' 5 times.(¼£ÃÕÿÿÿÿÿ8à±Ûñ“1
+Npython:S1066;"/Merge this if statement with the enclosing one.(†ãğµ8à±Ûñ“1
+>python:S3626A"Remove this redundant continue.(À–¬ˆ8à±Ûñ“1
+dpython:S3457B"EAdd replacement fields or use a normal string instead of an f-string.(ñŒı8à±Ûñ“1
+Opython:S1481’"*Remove the unused local variable "counts".(û©ƒ‹úÿÿÿÿ8à±Ûñ“1
+>python:S125Ø"Remove this commented out code.(ÇîîÍ8à±Ûñ“1
+Cpython:S125à"Remove this commented out code.(¯˜Óáûÿÿÿÿ8à±Ûñ“1

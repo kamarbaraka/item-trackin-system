@@ -6,6 +6,9 @@ import datetime
 import pandas
 import barcode as bc
 from barcode.writer import ImageWriter
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
+from os import listdir
 
 
 '''author: kamar baraka'''
@@ -205,7 +208,25 @@ class DatabaseApi:
         ):
             return 'ok'
 
+    @staticmethod
+    def convert_svg_to_png(path_to_svg, path_to_png):
+        drawing = svg2rlg(path_to_svg)
+        renderPM.drawToFile(drawing, path_to_png, fmt="PNG")
+        return 'ok'
 
+    @staticmethod
+    def bulk_convert_svg_png(dir_path_to_svg, dir_path_to_png):
+        no = 0
+        svg_files = listdir(dir_path_to_svg)
+        for svg_file in svg_files:
+            drawing = svg2rlg(f"{dir_path_to_svg}/{svg_file}")
+            renderPM.drawToFile(drawing, f"{dir_path_to_png}/conv_png{no}.png", fmt="PNG")
+            no += 1
+        return 'ok'
+
+
+"""
+test cases"""
 if __name__ == '__main__':
     db = DatabaseApi('../../resources/database/database')
     # db1 = DatabaseApi('../../resources/database/database', '../../resources/images/barcodeImages')
@@ -244,7 +265,7 @@ if __name__ == '__main__':
     # print(db.generate(4632, kgs=0.84))
     # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
     # print(db.generate(6, 0.72))
-    print(db.generate(2, 0.58, '../../resources/images/barcodeImages'))
+    # print(db.generate(2, 0.58, '../../resources/images/barcodeImages'))
     print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
     # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
