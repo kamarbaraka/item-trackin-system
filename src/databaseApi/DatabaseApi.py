@@ -194,13 +194,13 @@ class DatabaseApi:
             database['imagecount'] += 1
             codes.append(random_number)
 
-        export_dict = {}
-        if export:
-            for barcode in codes:
-                export_dict.update({"Barcodes": str(barcode)})
-
-            dataframe = pandas.DataFrame.from_dict(export_dict)
-            dataframe.to_excel(path)
+        # export_dict = {}
+        # if export:
+        #     for barcode in codes:
+        #         export_dict.update({"Barcodes": str(barcode)})
+        #
+        #     dataframe = pandas.DataFrame.from_dict(export_dict)
+        #     dataframe.to_excel(path)
         return codes
 
     """register a user in the system
@@ -286,6 +286,25 @@ class DatabaseApi:
             no += 1
         return 'ok'
 
+    """
+    generate excel report of weightless items.
+     :param path (str) the path to the location you wish to save the report.
+     :returns 'ok' (str) upon successful generation"""
+    def report_weightless(self, path):
+        database = self.database
+        keys = database.keys()
+        weightless_bars = []
+        for key in keys:
+
+            if key.isnumeric() and database[key]['kg'] == 0.0:
+                weightless_bars_dict = {}
+                weightless_bars_dict.update(Barcode=key)
+                weightless_bars.append(weightless_bars_dict)
+
+        dataframe = pandas.DataFrame.from_dict(weightless_bars)
+        dataframe.to_excel(path)
+        return 'ok'
+
 
 """
 test cases"""
@@ -304,12 +323,14 @@ if __name__ == '__main__':
     # print(db.generate(625, kgs=0.21))
     # print(db.generate(4632, kgs=0.84))
     # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
-    # print(db.generate(6, 0.72))
-    # print(db.generate(2, 0.58, '../../resources/images/barcodeImages'))
+    # print(db.generate(6))
+    print(db.generate(2, path='../../resources/images/barcodeImages'))
     # print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
     # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
-    print(db.report('out_test.xlsx'))
+    # print(db.report('out_test.xlsx'))
+
+    db.report_weightless('weightless.xlsx')
 
     # print(db.register({'username': 'kamar', 'password': '1234', 'firstname': 'kamar', 'lastname': 'baraka'}))
     # print('done register')
