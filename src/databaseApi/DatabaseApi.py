@@ -11,10 +11,10 @@ from reportlab.graphics import renderPM
 from os import listdir
 
 
-'''author: kamar baraka'''
+'''Author: kamar baraka'''
 
 '''class to store update and manipulate file based database
-:since:06/07/2023'''
+:Date:06/07/2023'''
 
 
 class DatabaseApi:
@@ -51,6 +51,9 @@ class DatabaseApi:
             self.barcode_image_storage = barcode_path
         self.barcode_image_storage = barcode_path
 
+    """input data from an excel sheet and save it in the database
+    the excel sheet must have two columns 'Barcodes' and 'Weight(kgs)'
+    :param excel_doc the path to the excel input file"""
     def parse_excel(self, excel_doc):
         database = self.database
         sheet = pandas.read_excel(excel_doc, sheet_name='Sheet1')
@@ -71,6 +74,9 @@ class DatabaseApi:
                 continue
         return f'ok'
 
+    """generate a report on the items in the database and save it to an excel sheet
+    :param output_file (str) the path where to save the generated excel sheet
+    :returns 'ok' when successful"""
     def report(self, output_file):
         database_shelve = self.database
         record = database_shelve['report']
@@ -78,6 +84,9 @@ class DatabaseApi:
         data_frame.to_excel(output_file)
         return 'ok'
 
+    """input a barcode into the database
+    :param barcode (int) the barcode to save in the database
+    :returns 'ok' when successful"""
     def parse(self, barcode):
         if self.__class_count == 0:
             self.database['report'] = []
@@ -107,6 +116,10 @@ class DatabaseApi:
         self.database['total_kgs_saved'] = self.__total_kgs
         return 'ok'
 
+    """sets the weight of an item in the database
+    :param barcode (int) the barcode of the item to set the weight
+    :param kg (float) the float weight you wish to set on the item
+    :returns 'ok' when successful"""
     def set_kg(self, barcode, kg):
         database = self.database
         database[str(barcode)]['kg'] = float(kg)
@@ -118,6 +131,9 @@ class DatabaseApi:
                     dic['Total Weight Saved'] = (float(dic['Weight(kg)']) * float(dic['Reuse Count']))
         return 'ok'
 
+    """get the data of a particular item in the database
+    :param barcode (int) the barcode of the item
+    :returns dictionary (dict) containing the items data when successful"""
     def fetch(self, barcode):
         database = self.database
         if str(barcode) not in database:
@@ -136,17 +152,31 @@ class DatabaseApi:
                         'total_reuse': database.get('total_reuse'), 'total_kgs_saved': database['total_kgs_saved']}
         return barcode_data
 
+    """generates barcodes and save them in the database
+    :param count (int) the number of barcodes to generate
+    :keyword kgs (float) the optional weight you wish to associate with each barcode. Can be left blank. If left blank,
+    an excel sheet will be generated in the path you provided containing all barcodes without associated weights
+    :keyword path (str) the optional path to the directory to save the resulting barcode images
+    :keyword image_format (str) the format of the image to be generated. Can be 'png', 'jpeg', 'tiff' or left blank.
+    :returns (list) list of successfully generated barcodes."""
     def generate(self, count, kgs=0.0, path=None, image_format="png"):
         self.count = count
-        lis_of_codes = self.__generator(path, image_format)
+        if kgs == 0.0:
+            export = True
+        else:
+            export = False
+        lis_of_codes = self.__generator(path, image_format, export)
         for code in lis_of_codes:
             self.parse(code)
             self.set_kg(str(code), kgs)
         return 'ok'
 
-    def __generator(self, path, image_format):
+    def __generator(self, path, image_format, export):
         database = self.database
         if path is None:
+            if self.barcode_image_storage is None:
+                print("please provide a path to save the barcodes")
+                raise NotADirectoryError
             path = self.barcode_image_storage
         if self.__class_count == 0:
             database['imagecount'] = 0
@@ -163,8 +193,25 @@ class DatabaseApi:
             bark.save(f'{path}/qrcode{database["imagecount"]}')
             database['imagecount'] += 1
             codes.append(random_number)
+
+        export_dict = {}
+        if export:
+            for barcode in codes:
+                export_dict.update({"Barcodes": str(barcode)})
+
+            dataframe = pandas.DataFrame.from_dict(export_dict)
+            dataframe.to_excel(path)
         return codes
 
+    """register a user in the system
+    :param user_profile (dict) a dictionary containing all the user details. The dictionary MUST contain the following
+    keys;
+    :key 'username' the unique username of the user.
+    :key 'firstname' the first name of the user.
+    :key 'lastname' the last name of the user.
+    :key 'role' the role of the user in the system.
+    :key 'password' the password of the user.
+    :returns 'ok' (str) upon successful registration"""
     def register(self, user_profile):
         database = self.database
         if self.__register_count == 0:
@@ -172,7 +219,8 @@ class DatabaseApi:
                 user_profile['username']: {
                     'password': user_profile['password'],
                     'firstname': user_profile['firstname'],
-                    'lastname': user_profile['lastname']
+                    'lastname': user_profile['lastname'],
+                    'role': user_profile['role']
                 }
             }
             self.__register_count += 1
@@ -184,7 +232,8 @@ class DatabaseApi:
                 user_profile['username']: {
                     'password': user_profile['password'],
                     'firstname': user_profile['firstname'],
-                    'lastname': user_profile['lastname']
+                    'lastname': user_profile['lastname'],
+                    'role': user_profile['role']
                 }
             }
 
@@ -193,12 +242,17 @@ class DatabaseApi:
                 user_profile['username']: {
                     'password': user_profile['password'],
                     'firstname': user_profile['firstname'],
-                    'lastname': user_profile['lastname']
+                    'lastname': user_profile['lastname'],
+                    'role': user_profile['role']
                 }
             }
         )
         return 'ok'
 
+    """enables a user to login.
+    :param profile (dict) a dictionary containing the user details. It must have the keys;
+    :key 'username' the username of the user.
+    :key 'password' the password of the user."""
     def login(self, profile):
         database = self.database
 
@@ -208,12 +262,20 @@ class DatabaseApi:
         ):
             return 'ok'
 
+    """converts an svg image to png.
+    :param path_to_svg (str) the path to the svg file.
+    :param path_to_png (str) the path to save the png file.
+    :returns 'ok' (str) upon successful conversion."""
     @staticmethod
     def convert_svg_to_png(path_to_svg, path_to_png):
         drawing = svg2rlg(path_to_svg)
         renderPM.drawToFile(drawing, path_to_png, fmt="PNG")
         return 'ok'
 
+    """converts bulk svg images to png.
+    :param dir_path_to_svg (str) the path to the directory containing the svg images.
+    :param dir_path_to_png (str) the path to the directory you wish to save the png images.
+    :returns 'ok' upon successful conversion"""
     @staticmethod
     def bulk_convert_svg_png(dir_path_to_svg, dir_path_to_png):
         no = 0
@@ -235,29 +297,7 @@ if __name__ == '__main__':
     # print(db.fetch(123456))
     # print(db is db1)
 
-    # while True:
-    #     inp = input('scan barcode to save, type "do" when done \n')
-    #     if inp == 'do':
-    #         break
-    #     print(db.parse(str(inp)))
-    # while True:
-    #     inpt = input('scan barcodes, type "exit" to exit or "kgs" to input kgs \n')
-    #     if inpt == 'exit':
-    #         break
-    #     if inpt == 'kgs':
-    #         while True:
-    #             input_code = input('scan the item to insert kgs, type "do" when done\n')
-    #             if input_code == 'do':
-    #                 break
-    #             input_kg = input('enter the kg to input, type "do" when done \n')
-    #             if input_kg == 'do':
-    #                 break
-    #             print(db.set_kg(input_code, input_kg))
-    #     try:
-    #         print(db.fetch(inpt))
-    #     except KeyError:
-    #         print('scan again')
-    #         continue
+    #
 
     # print(db.generate(205, kgs=0.71))
     # print(db.generate(2300, kgs=0.62))
@@ -266,10 +306,10 @@ if __name__ == '__main__':
     # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
     # print(db.generate(6, 0.72))
     # print(db.generate(2, 0.58, '../../resources/images/barcodeImages'))
-    print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
+    # print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
     # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
-    # print(db.report('out_test.xlsx'))
+    print(db.report('out_test.xlsx'))
 
     # print(db.register({'username': 'kamar', 'password': '1234', 'firstname': 'kamar', 'lastname': 'baraka'}))
     # print('done register')
