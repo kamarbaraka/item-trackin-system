@@ -159,12 +159,8 @@ class DatabaseApi:
     :keyword path (str) the optional path to the directory to save the resulting barcode images
     :keyword image_format (str) the format of the image to be generated. Can be 'png', 'jpeg', 'tiff' or left blank.
     :returns (list) list of successfully generated barcodes."""
-    def generate(self, count, kgs=0.0, path=None, image_format="png"):
+    def generate(self, count, kgs=0.0, path=None, image_format="png", export=False):
         self.count = count
-        if kgs == 0.0:
-            export = True
-        else:
-            export = False
         lis_of_codes = self.__generator(path, image_format, export)
         for code in lis_of_codes:
             self.parse(code)
@@ -194,13 +190,15 @@ class DatabaseApi:
             database['imagecount'] += 1
             codes.append(random_number)
 
-        # export_dict = {}
-        # if export:
-        #     for barcode in codes:
-        #         export_dict.update({"Barcodes": str(barcode)})
-        #
-        #     dataframe = pandas.DataFrame.from_dict(export_dict)
-        #     dataframe.to_excel(path)
+        export_dict = []
+        if export:
+            for barcode in codes:
+                weightless_dict = {}
+                weightless_dict.update({"Barcodes": str(barcode)})
+                export_dict.append(weightless_dict)
+
+            dataframe = pandas.DataFrame.from_dict(export_dict)
+            dataframe.to_excel(path)
         return codes
 
     """register a user in the system
