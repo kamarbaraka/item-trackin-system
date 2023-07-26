@@ -63,16 +63,46 @@ class DatabaseApi:
 
         item_dict = dict(zip(key_list, value_list))
 
-        for k, v in item_dict.items():
-            if k in database.keys():
-                if float(v) != 0.00:
-                    self.set_kg(int(k), v)
+        for key, value in item_dict.items():
+            if key in database.keys():
+                if float(value) != 0.00:
+                    self.set_kg(int(key), value)
                     continue
-            self.parse(k)
-            if float(v) != 0.00:
-                self.set_kg(int(k), v)
+            self.parse(key)
+            if float(value) != 0.00:
+                self.set_kg(int(key), value)
                 continue
         return f'ok'
+
+    """
+    adHoc set reuse count for each barcode/item in the excel sheet.
+    the excel sheet must have the columns;
+    'Barcode' -> the barcode of the item.
+    'Reuse Count' -> the reuse count of the item.
+    """
+    def parse_counts(self, path_to_excel):
+
+        sheet = pandas.read_excel(path_to_excel, sheet_name='Sheet1')
+        record = sheet.to_dict(orient='records')
+        key_list = [str(each_dict['Barcode']) for each_dict in record]
+        value_list = [each_dict['Reuse Count'] for each_dict in record]
+
+        item_dict = dict(zip(key_list, value_list))
+
+        failed_keys = []
+        for key, value in item_dict.items():
+
+            while value != 0:
+
+                if self.fetch(key) == "no such data":
+                    failed_keys.append(key)
+                    break
+                value -= 1
+
+        if len(failed_keys) != 0:
+            return failed_keys
+
+        return "ok"
 
     """generate a report on the items in the database and save it to an excel sheet
     :param output_file (str) the path where to save the generated excel sheet
@@ -322,13 +352,14 @@ if __name__ == '__main__':
     # print(db.generate(4632, kgs=0.84))
     # print(db.generate(12, 0.68, '../../resources/images/barcodeImages'))
     # print(db.generate(6))
-    print(db.generate(2, path='../../resources/images/barcodeImages'))
+    # print(db.generate(2, path='../../resources/images/barcodeImages'))
     # print(db.generate(2, 0.86, '../../resources/images/barcodeImages'))
     # db.generate(2, 0.86)
     # print(db.parse_excel('input.xlsx'))
-    # print(db.report('out_test.xlsx'))
+    print(db.parse_counts('count.xlsx'))
+    print(db.report('out_test.xlsx'))
 
-    db.report_weightless('weightless.xlsx')
+    # db.report_weightless('weightless.xlsx')
 
     # print(db.register({'username': 'kamar', 'password': '1234', 'firstname': 'kamar', 'lastname': 'baraka'}))
     # print('done register')
